@@ -3,8 +3,9 @@
 #include <random>
 #include <algorithm>
 #include <vector>
+
 #define N_min 256
-#define N_max 8388608
+#define N_max 16777216
 #define K 10
 
 int *fill_in_forward(size_t size) {
@@ -24,49 +25,27 @@ int *fill_in_backward(size_t size) {
     arr[0] = static_cast<int> (size - 1);
     return arr;
 }
-int rand(int n)
-{
-    return rand() % n ;
-}
-int *fill_in_random( int size) {
+
+int *fill_in_random(int size) {
     auto arr = new int[size];
-    std::vector<int> ind(size-1);
-    for (int i = 0 ;i < size - 1; i++) {
-        ind[i] = i+1;
-    }
-//    for (int i = 0; i < size-1; i++) {
-//        std::cout<<ind[i]<<" ";
-//    }
-//    std::cout<<"\n";
-    int cur=0,prev=0;
+    std::vector<int> ind(size - 1);
+    for (int i = 0; i < size - 1; i++)
+        ind[i] = i + 1;
+    int cur = 0, prev = 0;
     std::shuffle(ind.begin(), ind.end(), std::mt19937(std::random_device()()));
-    for (int i = 0; i < size-1 && !ind.empty(); i++) {
-        cur = ind[ind.size()-1];
+    for (int i = 0; i < size - 1 && !ind.empty(); i++) {
+        cur = ind[ind.size() - 1];
         ind.pop_back();
-        arr[prev]=cur;
+        arr[prev] = cur;
         prev = cur;
     }
-    arr[cur]=0;
-
-
-//    for (int i = 0; i < size; i++) {
-//        std::cout<<arr[i]<<"|";
-//    }
-//    for (int i = 0; i < size-1; i++) {
-//        std::cout<<ind[i]<<" ";
-//    }
-//    for (int i = 1; i < size; i++) {
-////        std::shuffle(0,(int)size-1, std::mt19937(std::random_device()()));
-////    }
-   // arr[0] = static_cast<int> (size - 1);
+    arr[cur] = 0;
     return arr;
 }
 
 void cache_warm(const int *arr, size_t size) {
-    for (int k = 0, i = 0; i < size; i++) {
+    for (int k = 0, i = 0; i < size; i++)
         k = arr[k];
-        //std::cout << k<<" | ";
-    }
 }
 
 void bypass(const int *arr, size_t size, std::ofstream &fout) {
@@ -85,22 +64,21 @@ void bypass(const int *arr, size_t size, std::ofstream &fout) {
         k = arr[k];
 
     asm volatile ("rdtsc\n":"=a"(end.t32.th), "=d"(end.t32.tl)::"memory");
-    fout << "Count of elements: " << size << "  ";
+    fout << "Size in bytes: " << size*4 << "  ";
     fout << "Time taken: " << (end.t64 - start.t64) / (size * K) << " ticks\n";
-     fout.flush();
+    fout.flush();
 
 }
-
 
 int main() {
     int *test_arr;
     std::ofstream forw_fout("forw_res.txt");
     std::ofstream backw_fout("backw_res.txt");
     std::ofstream rand_fout("rand_res.txt");
-
     if (!forw_fout.is_open() || !backw_fout.is_open() || !rand_fout.is_open())
         return 1;
-    for (int s = N_min; s <= N_max; s *=2) {   //262144
+
+    for (int s = N_min; s <= N_max; s *= 2) {   //262144  131072
         test_arr = fill_in_forward(s);
         forw_fout << "Forward    ";
         bypass(test_arr, s, forw_fout);
@@ -114,8 +92,7 @@ int main() {
         test_arr = fill_in_random(s);
         rand_fout << "Random   ";
         bypass(test_arr, s, rand_fout);
-        cache_warm(test_arr,s);
+        cache_warm(test_arr, s);
         delete[] test_arr;
-
     }
 }
